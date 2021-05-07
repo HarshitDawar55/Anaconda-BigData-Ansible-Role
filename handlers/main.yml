@@ -1,0 +1,10 @@
+---
+# handlers file for Anaconda
+- name: Source BashRC
+  shell: source ~/.bashrc
+
+- name: Update Conda
+  shell: conda update -n base -c defaults conda -y --force
+
+- name: Run Conda Init
+  shell: conda init

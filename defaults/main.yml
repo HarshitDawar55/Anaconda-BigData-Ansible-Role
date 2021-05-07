@@ -1,0 +1,3 @@
+---
+# defaults file for Anaconda
+anaconda_installation_directory: "/anaconda"

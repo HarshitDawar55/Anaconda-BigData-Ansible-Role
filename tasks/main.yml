@@ -1,0 +1,69 @@
+---
+# tasks file for Anaconda
+- name: Installing the required Packages!
+  package:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ packages_required }}"
+
+- name: Checking for the download directory of Anaconda!
+  stat:
+    path: "{{ anaconda_installation_directory }}"
+  register: directory_status
+    
+
+- name: Creating the directory!
+  when: directory_status.stat.isdir is not defined 
+  file:
+    name:  "{{ anaconda_installation_directory }}"
+    state: directory
+
+- name: Checking the Anaconda Software presence in the directory!
+  stat:
+    path: "{{ anaconda_installation_directory }}/Anaconda3-5.3.1-Linux-x86_64.sh"
+  register: anaconda_software_presence
+
+- name: Downloading the software!
+  when: anaconda_software_presence.stat.exists == false
+  get_url:
+    url: "{{ anaconda_installation_url }}" 
+    dest: "{{ anaconda_installation_directory }}/Anaconda3-5.3.1-Linux-x86_64.sh"
+    mode: '0700'
+
+- name: Checking for the installation directory of Anaconda!
+  stat:
+    path: "/root/anaconda3"
+  register: installation_directory_status
+
+- name: Installing Anaconda software!
+  when: installation_directory_status.stat.isdir is not defined
+  shell: "bash {{ anaconda_installation_directory }}/Anaconda3-5.3.1-Linux-x86_64.sh -b -u -f"
+
+- name: Setting up the path for Anaconda!
+  blockinfile:
+    path: ~/.bashrc
+    backup: yes
+    marker: "# {mark} Anaconda Path {{ item.key }}"
+    # insertafter: EOF
+    block: |
+      export {{ item.key }}={{ item.value }}
+  loop:
+    - { key: CONDA_HOME, value: /root/anaconda3 }
+    - { key: PATH, value: $CONDA_HOME/bin:$PATH  }
+  notify:
+    - Source BashRC 
+    - Update Conda
+    - Run Conda Init
+
+- name: Calling the Handlers!
+  meta: flush_handlers
+
+# - name: Updating the Conda & Packages!
+#   command: conda update --all -y
+
+- name: creating a environment for Big Data!
+  block:
+    - command: conda create -n BigData jupyter python-hdfs -y
+  always:
+    - name: Activating the environment for Big Data
+      command: conda activate BigData
